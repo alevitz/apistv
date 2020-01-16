@@ -1,10 +1,17 @@
 /** Given a query string, return array of matching shows:
  *     { id, name, summary, episodesUrl }
  */
-$(function(){
-  let $searchVal = $('#search-query').val();
-  searchShows($searchVal);
-})
+$(function () {
+  $('#shows-list').on('click', '.show-episodes', async function (evt) {
+    // let $searchVal = $('#search-query').val();
+    let button = evt.target;
+    let showId = button.dataset.showId;
+    let showsArr = await getEpisodes(showId);
+   populateEpisodes(showsArr);
+   
+  }
+  )
+});
 
 /** Search Shows
  *    - given a search term, search for tv shows that
@@ -30,15 +37,16 @@ async function searchShows(query) {
   // http://api.tvmaze.com/search/shows?q=
 
   let showsArr = [];
-  for(let container of response.data){
-    
+  for (let container of response.data) {
+
     let img = container.show.image ? container.show.image.medium : `https://store-images.s-microsoft.com/image/apps.65316.13510798887490672.6e1ebb25-96c8-4504-b714-1f7cbca3c5ad.f9514a23-1eb8-4916-a18e-99b1a9817d15?mode=scale&q=90&h=300&w=300`;
     let show = {
-      id : container.show.id,
+      id: container.show.id,
       name: container.show.name,
       summary: container.show.summary,
       // image: container.show.image.medium
-      image: img
+      image: img,
+      // episodeList: getEpisodes(container.show.id)
     }
     showsArr.push(show);
   }
@@ -64,6 +72,7 @@ function populateShows(shows) {
            <div class="card-body">
              <h5 class="card-title">${show.name}</h5>
              <p class="card-text">${show.summary}</p>
+             <button data-show-id="${show.id}" class="show-episodes">Show Episodes</button>
            </div>
          </div>
        </div>
@@ -79,7 +88,7 @@ function populateShows(shows) {
  *    - get list of matching shows and show in shows list
  */
 
-$("#search-form").on("submit", async function handleSearch (evt) {
+$("#search-form").on("submit", async function handleSearch(evt) {
   evt.preventDefault();
 
   let query = $("#search-query").val();
@@ -90,6 +99,7 @@ $("#search-form").on("submit", async function handleSearch (evt) {
   let shows = await searchShows(query);
 
   populateShows(shows);
+
 });
 
 
@@ -101,6 +111,24 @@ async function getEpisodes(id) {
   // TODO: get episodes from tvmaze
   //       you can get this by making GET request to
   //       http://api.tvmaze.com/shows/SHOW-ID-HERE/episodes
+  let episodeListURL = `http://api.tvmaze.com/shows/${id}/episodes`;
+  let response = await axios.get(episodeListURL);
+  console.log(response);
+  console.log(response.data);
+  return response.data;
 
   // TODO: return array-of-episode-info, as described in docstring above
 }
+
+function populateEpisodes(showsArray) {
+  const $episodeList = $("#episodes-list");
+  $episodeList.empty();
+  console.log(showsArray);
+  for (let show of showsArray) {
+    let episodeListing = `<li>${show.name} (Season ${show.season}, Number ${show.number})</li>`;
+
+    $episodeList.append(episodeListing);
+  }
+  $('#episodes-area').show();
+}
+
